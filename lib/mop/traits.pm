@@ -49,8 +49,20 @@ sub rw {
             name => $attr->key_name,
             body => sub {
                 my $self = shift;
-                $weak_attr->store_data_in_slot_for($self, shift) if @_;
-                $weak_attr->fetch_data_in_slot_for($self);
+                if (blessed $self) {
+                    $weak_attr->store_data_in_slot_for($self, shift) if @_;
+                    $weak_attr->fetch_data_in_slot_for($self);
+                }
+                else {
+                    if (@_) {
+                        my $data = shift;
+                        $weak_attr->set_default($data);
+                        $data;
+                    }
+                    else {
+                        $weak_attr->get_default if $weak_attr->has_default;
+                    }
+                }
             }
         )
     );
@@ -70,7 +82,12 @@ sub ro {
             body => sub {
                 my $self = shift;
                 die "Cannot assign to a read-only accessor" if @_;
-                $weak_attr->fetch_data_in_slot_for($self);
+                if (blessed $self) {
+                    $weak_attr->fetch_data_in_slot_for($self);
+                }
+                else {
+                    $weak_attr->get_default if $weak_attr->has_default;
+                }
             }
         )
     );
